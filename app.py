@@ -37,6 +37,8 @@ gemini_client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
+MODEL = "gemini-3.5-flash-lite"
+
 
 # ==========================================
 # LOYALTY HUB
@@ -265,7 +267,7 @@ def compare():
 
                 price = float(price)
 
-            except:
+            except (TypeError, ValueError):
 
                 continue
 
@@ -306,7 +308,10 @@ def compare():
             continue
 
 
-        # Find cheapest retailer
+        # ==================================
+        # FIND CHEAPEST RETAILER
+        # ==================================
+
         cheapest = min(
 
             retailer_prices,
@@ -316,7 +321,10 @@ def compare():
         )
 
 
-        # Find most expensive retailer
+        # ==================================
+        # FIND MOST EXPENSIVE RETAILER
+        # ==================================
+
         most_expensive = max(
 
             retailer_prices,
@@ -326,7 +334,10 @@ def compare():
         )
 
 
-        # Calculate saving
+        # ==================================
+        # CALCULATE SAVING
+        # ==================================
+
         potential_saving = round(
 
             most_expensive["price"]
@@ -443,7 +454,7 @@ Rules:
 
     response = gemini_client.models.generate_content(
 
-        model="gemini-3.5-flash-lite",
+        model=MODEL,
 
         contents=[
 
@@ -501,12 +512,18 @@ def compare_prices(receipt_items):
         product_name = item["name"]
 
 
-        receipt_price = float(
-            item.get(
-                "price",
-                0
+        try:
+
+            receipt_price = float(
+                item.get(
+                    "price",
+                    0
+                )
             )
-        )
+
+        except (TypeError, ValueError):
+
+            receipt_price = 0
 
 
         result = search_loyaltyhub(
@@ -567,7 +584,7 @@ def compare_prices(receipt_items):
                     )
                 )
 
-            except:
+            except (TypeError, ValueError):
 
                 continue
 
@@ -809,6 +826,12 @@ def analyse():
 
     except Exception as error:
 
+        print(
+            "Receipt analysis error:",
+            str(error)
+        )
+
+
         return jsonify({
 
             "success": False,
@@ -820,80 +843,136 @@ def analyse():
 
 
 # ==========================================
-# SENTIMENT ANALYSIS
+# SIMPLE REVIEW CHECK
+# ==========================================
+#
+# This replaces the Gemini sentiment feature
+# with a very simple keyword-based check.
+#
+# It does NOT use AI.
 # ==========================================
 
-def analyze_sentiment(review):
+def analyze_review(review):
 
-    prompt = """
-Analyse the sentiment of this grocery product review.
+    positive_words = [
 
-Return ONLY valid JSON:
+        "love",
+        "good",
+        "great",
+        "excellent",
+        "fresh",
+        "delicious",
+        "amazing",
+        "happy",
+        "perfect",
+        "nice",
+        "best",
+        "tasty",
+        "quality",
+        "recommend"
 
-{
-    "sentiment": "Positive",
-    "score": 0.85,
-    "summary": "Short explanation"
-}
-
-Sentiment must be one of:
-
-Positive
-Neutral
-Negative
-
-Score must be between -1 and 1.
-
-Review:
-""" + review
+    ]
 
 
-    try:
+    negative_words = [
 
-        response = gemini_client.models.generate_content(
+        "bad",
+        "terrible",
+        "awful",
+        "horrible",
+        "stale",
+        "rotten",
+        "sour",
+        "disappointing",
+        "disappointed",
+        "expensive",
+        "poor",
+        "worst",
+        "hate",
+        "dry",
+        "tasteless"
 
-            model="gemini-3.5-flash-lite",
+    ]
 
-            contents=prompt
 
+    words = review.lower().split()
+
+
+    positive_count = 0
+
+    negative_count = 0
+
+
+    for word in words:
+
+        clean_word = word.strip(
+            ".,!?;:"
         )
 
 
-        result = response.text.strip()
+        if clean_word in positive_words:
+
+            positive_count += 1
 
 
-        result = result.replace(
-            "```json",
-            ""
+        if clean_word in negative_words:
+
+            negative_count += 1
+
+
+    if positive_count > negative_count:
+
+        sentiment = "Positive"
+
+        score = 0.7
+
+        summary = (
+            "The review contains more positive "
+            "than negative words."
         )
 
 
-        result = result.replace(
-            "```",
-            ""
+    elif negative_count > positive_count:
+
+        sentiment = "Negative"
+
+        score = -0.7
+
+        summary = (
+            "The review contains more negative "
+            "than positive words."
         )
 
 
-        return json.loads(
-            result.strip()
+    else:
+
+        sentiment = "Neutral"
+
+        score = 0
+
+        summary = (
+            "The review does not contain enough "
+            "clearly positive or negative words."
         )
 
 
-    except Exception:
+    return {
 
-        return {
+        "sentiment":
+            sentiment,
 
-            "sentiment":
-                "Neutral",
+        "score":
+            score,
 
-            "score":
-                0,
+        "summary":
+            summary
 
-            "summary":
-                "Unable to analyse the review."
+    }
 
-        }
 
+# ==========================================
+# REVIEW ROUTE
+# ==========================================
 
 @app.route(
     "/sentiment",
@@ -931,7 +1010,7 @@ def sentiment():
         }), 400
 
 
-    result = analyze_sentiment(
+    result = analyze_review(
         review
     )
 
