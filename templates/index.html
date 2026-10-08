@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Mzansi Basket</title>
+
+<link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+>
+
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+
+
+</head>
+
+<body>
+
+<header>
+
+```
+<div class="container">
+
+    <h1>Mzansi Basket</h1>
+
+    <p>
+        Compare your grocery prices, discover potential savings,
+        and understand customer sentiment.
+    </p>
+
+</div>
+
+
+</header>
+
+<main>
+
+
+<div class="container">
+
+
+    <!-- =========================================
+         RECEIPT UPLOAD
+    ========================================== -->
+
+    <section class="upload-card">
+
+        <p class="eyebrow">
+            RECEIPT ANALYSIS
+        </p>
+
+        <h2>
+            Upload your grocery receipt
+        </h2>
+
+        <p>
+            Upload a receipt and Mzansi Basket will
+            identify your groceries and compare prices.
+        </p>
+
+
+        <form id="receiptForm">
+
+            <input
+                type="file"
+                id="receipt"
+                accept="image/*"
+                required
+            >
+
+            <button
+                type="submit"
+                id="analyseButton"
+            >
+                Analyse Receipt
+            </button>
+
+        </form>
+
+
+        <div
+            id="loading"
+            class="loading hidden"
+        >
+
+            <div class="spinner"></div>
+
+            <p>
+                Analysing your receipt...
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         PRODUCT SEARCH
+    ========================================== -->
+
+    <section class="upload-card">
+
+        <p class="eyebrow">
+            PRICE COMPARISON
+        </p>
+
+        <h2>
+            Search for a product
+        </h2>
+
+        <p>
+            Don't have a receipt? Enter a product name
+            and compare prices across retailers.
+        </p>
+
+
+        <form id="productSearchForm">
+
+            <input
+                type="text"
+                id="productSearch"
+                placeholder="Example: milk"
+                required
+            >
+
+            <button
+                type="submit"
+                id="compareButton"
+            >
+                Compare Prices
+            </button>
+
+        </form>
+
+
+        <div
+            id="compareLoading"
+            class="loading hidden"
+        >
+
+            <div class="spinner"></div>
+
+            <p>
+                Finding the latest available prices...
+            </p>
+
+        </div>
+
+
+        <div
+            id="productResult"
+            class="hidden"
+        ></div>
+
+    </section>
+
+
+    <!-- =========================================
+         ERROR
+    ========================================== -->
+
+    <div
+        id="error"
+        class="hidden"
+    ></div>
+
+
+    <!-- =========================================
+         RECEIPT DASHBOARD
+    ========================================== -->
+
+    <section
+        id="dashboard"
+        class="hidden"
+    >
+
+        <h2>
+            Grocery Comparison
+        </h2>
+
+
+        <div class="stats">
+
+            <div class="stat-card">
+
+                <span>
+                    Receipt Total
+                </span>
+
+                <strong id="receiptTotal">
+                    R0.00
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Possible Saving
+                </span>
+
+                <strong id="possibleSaving">
+                    R0.00
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Items
+                </span>
+
+                <strong id="itemCount">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Cheapest Store
+                </span>
+
+                <strong id="cheapestStore">
+                    -
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- Comparison Table -->
+
+        <div class="chart-container">
+
+            <h3>
+                Grocery Price Comparison
+            </h3>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Product
+                            </th>
+
+                            <th>
+                                Receipt Price
+                            </th>
+
+                            <th>
+                                Cheapest
+                            </th>
+
+                            <th>
+                                Saving
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="comparisonTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- Store Chart -->
+
+        <div class="chart-container">
+
+            <h3>
+                Total Cost by Retailer
+            </h3>
+
+            <canvas id="storeChart"></canvas>
+
+        </div>
+
+
+        <!-- Saving Chart -->
+
+        <div class="chart-container">
+
+            <h3>
+                Potential Savings
+            </h3>
+
+            <canvas id="savingChart"></canvas>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         SENTIMENT ANALYSIS
+    ========================================== -->
+
+    <section class="upload-card">
+
+        <p class="eyebrow">
+            CUSTOMER SENTIMENT
+        </p>
+
+        <h2>
+            Understand customer reviews
+        </h2>
+
+        <p>
+            Enter a grocery review and let AI analyse
+            the customer's overall sentiment.
+        </p>
+
+
+        <textarea
+            id="review"
+            placeholder="Example: I really enjoyed this product. It was fresh, affordable and tasted great."
+        ></textarea>
+
+
+        <button
+            id="sentimentButton"
+            type="button"
+        >
+            Analyse Sentiment
+        </button>
+
+
+        <div
+            id="sentimentResult"
+            class="hidden"
+        >
+
+            <div class="sentiment-card">
+
+                <div>
+
+                    <div id="sentimentLabel">
+                        Unknown
+                    </div>
+
+                    <div>
+
+                        Sentiment Score:
+                        <span id="sentimentScore">
+                            0.00
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <p id="sentimentSummary">
+                </p>
+
+
+                <!-- Quality Score -->
+
+                <div class="quality-indicator">
+
+                    <h4>
+                        Customer Quality Score
+                    </h4>
+
+
+                    <div class="quality-score-row">
+
+                        <div id="qualityNumber">
+                            0
+                        </div>
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+
+                    <div class="quality-bar">
+
+                        <div
+                            id="qualityBarFill"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Sentiment Meter -->
+
+                <div class="sentiment-meter">
+
+                    <div class="sentiment-meter-labels">
+
+                        <span>
+                            Negative
+                        </span>
+
+                        <span>
+                            Neutral
+                        </span>
+
+                        <span>
+                            Positive
+                        </span>
+
+                    </div>
+
+
+                    <div class="sentiment-track">
+
+                        <div
+                            id="sentimentMarker"
+                            class="sentiment-marker"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+</div>
+```
+
+</main>
+
+<script
+    src="https://cdn.jsdelivr.net/npm/chart.js"
+></script>
+
+<script
+    src="{{ url_for('static', filename='app.js') }}"
+></script>
+
+</body>
+
+</html>
