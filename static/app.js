@@ -1,1806 +1,2393 @@
+
 document.addEventListener(
-"DOMContentLoaded",
-function() {
+    "DOMContentLoaded",
+    function () {
 
 
-    /* =========================================
-       HELPERS
-    ========================================== */
-
-    function formatCurrency(value) {
-
-        const number =
-            Number(value) || 0;
-
-
-        return "R" +
-            number.toFixed(2);
-
-    }
-
-
-    function formatRetailerName(name) {
-
-        if (!name) {
-            return "Unknown";
-        }
-
-
-        const names = {
-
-            pnp: "Pick n Pay",
-
-            checkers: "Checkers",
-
-            shoprite: "Shoprite",
-
-            woolworths: "Woolworths",
-
-            clicks: "Clicks",
-
-            dischem: "Dis-Chem",
-
-            makro: "Makro"
-
-        };
-
-
-        const key =
-            String(name)
-                .toLowerCase()
-                .trim();
-
-
-        return names[key] ||
-            String(name)
-                .replace(
-                    /\b\w/g,
-                    function(letter) {
-                        return letter.toUpperCase();
-                    }
-                );
-
-    }
-
-
-    function showError(message) {
-
-        const error =
-            document.getElementById(
-                "error"
-            );
-
-
-        if (error) {
-
-            error.textContent =
-                message;
-
-            error.classList.remove(
-                "hidden"
-            );
-
-        }
-
-    }
-
-
-    function hideError() {
-
-        const error =
-            document.getElementById(
-                "error"
-            );
-
-
-        if (error) {
-
-            error.classList.add(
-                "hidden"
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       PRODUCT SEARCH
-    ========================================== */
-
-    const productSearchForm =
-        document.getElementById(
-            "productSearchForm"
+        console.log(
+            "Mzansi Basket JavaScript loaded successfully."
         );
 
 
-    if (productSearchForm) {
+        // =====================================================
+        // HELPER FUNCTIONS
+        // =====================================================
 
-        productSearchForm.addEventListener(
-            "submit",
-            async function(event) {
+        function formatCurrency(value) {
 
-                event.preventDefault();
+            const number =
+                Number(value) || 0;
 
-                hideError();
+            return "R" +
+                number.toFixed(2);
+
+        }
 
 
-                const input =
-                    document.getElementById(
-                        "productSearch"
+        function formatRetailerName(name) {
+
+            const retailers = {
+
+                "pnp": "Pick n Pay",
+
+                "picknpay": "Pick n Pay",
+
+                "pick n pay": "Pick n Pay",
+
+                "checkers": "Checkers",
+
+                "shoprite": "Shoprite",
+
+                "woolworths": "Woolworths",
+
+                "makro": "Makro",
+
+                "clicks": "Clicks",
+
+                "dischem": "Dis-Chem",
+
+                "dis-chem": "Dis-Chem"
+
+            };
+
+
+            const key =
+                String(name || "")
+                    .trim()
+                    .toLowerCase();
+
+
+            return retailers[key] ||
+                String(name || "Unknown Retailer");
+        }
+
+
+        function showError(elementId, message) {
+
+            const element =
+                document.getElementById(
+                    elementId
+                );
+
+
+            if (!element) {
+                return;
+            }
+
+
+            element.textContent =
+                message;
+
+
+            element.classList.remove(
+                "hidden"
+            );
+        }
+
+
+        function hideError(elementId) {
+
+            const element =
+                document.getElementById(
+                    elementId
+                );
+
+
+            if (!element) {
+                return;
+            }
+
+
+            element.textContent = "";
+
+            element.classList.add(
+                "hidden"
+            );
+        }
+
+
+
+        // =====================================================
+        // MANUAL PRODUCT SEARCH
+        // =====================================================
+
+        const searchButton =
+            document.getElementById(
+                "searchButton"
+            );
+
+
+        const productSearch =
+            document.getElementById(
+                "productSearch"
+            );
+
+
+        if (searchButton) {
+
+            searchButton.addEventListener(
+                "click",
+                searchProduct
+            );
+
+        }
+
+
+        if (productSearch) {
+
+            productSearch.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Enter"
+                    ) {
+
+                        event.preventDefault();
+
+                        searchProduct();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        async function searchProduct() {
+
+            const query =
+                productSearch
+                ? productSearch.value.trim()
+                : "";
+
+
+            hideError(
+                "searchError"
+            );
+
+
+            const results =
+                document.getElementById(
+                    "productResults"
+                );
+
+
+            if (!query) {
+
+                showError(
+                    "searchError",
+                    "Please enter a grocery product."
+                );
+
+                return;
+            }
+
+
+            searchButton.disabled = true;
+
+            searchButton.textContent =
+                "Searching...";
+
+
+            if (results) {
+
+                results.innerHTML = "";
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/compare",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                product: query
+                            })
+
+                        }
                     );
 
 
-                const button =
-                    document.getElementById(
-                        "compareButton"
+                const data =
+                    await response.json();
+
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to compare prices."
                     );
 
-
-                const loading =
-                    document.getElementById(
-                        "compareLoading"
-                    );
-
-
-                const result =
-                    document.getElementById(
-                        "productResult"
-                    );
-
-
-                const product =
-                    input.value.trim();
-
-
-                if (!product) {
-                    return;
                 }
 
 
-                button.disabled = true;
-
-                loading.classList.remove(
-                    "hidden"
-                );
-
-                result.classList.add(
-                    "hidden"
+                displayProductResults(
+                    data
                 );
 
 
-                try {
+            } catch (error) {
 
-                    const response =
-                        await fetch(
-                            "/compare",
-                            {
+                console.error(
+                    "Product search error:",
+                    error
+                );
 
-                                method: "POST",
 
-                                headers: {
-                                    "Content-Type":
-                                        "application/json"
-                                },
+                showError(
+                    "searchError",
+                    error.message ||
+                    "Something went wrong while searching."
+                );
 
-                                body:
-                                    JSON.stringify({
-                                        product: product
-                                    })
 
-                            }
+            } finally {
+
+                searchButton.disabled = false;
+
+                searchButton.textContent =
+                    "Compare Prices";
+
+            }
+
+        }
+
+
+
+        function displayProductResults(data) {
+
+            const results =
+                document.getElementById(
+                    "productResults"
+                );
+
+
+            if (!results) {
+                return;
+            }
+
+
+            results.innerHTML = "";
+
+
+            const products =
+                Array.isArray(data.products)
+                ? data.products
+                : [];
+
+
+            if (products.length === 0) {
+
+                showError(
+                    "searchError",
+                    "No matching products were found."
+                );
+
+                return;
+
+            }
+
+
+            products.forEach(
+                function (product, index) {
+
+                    const card =
+                        document.createElement(
+                            "div"
                         );
 
 
-                    const data =
-                        await response.json();
+                    card.className =
+                        "product-card";
 
 
-                    if (!response.ok ||
-                        !data.success) {
+                    const prices =
+                        Array.isArray(
+                            product.prices
+                        )
+                        ? product.prices
+                        : [];
 
-                        throw new Error(
-                            data.error ||
-                            "Unable to compare prices."
-                        );
+
+                    const cleanPrices =
+                        prices
+                            .map(function (item) {
+
+                                return {
+
+                                    retailer:
+                                        item.retailer,
+
+                                    price:
+                                        Number(
+                                            item.price
+                                        ) || 0
+
+                                };
+
+                            })
+                            .filter(function (item) {
+
+                                return item.price > 0;
+
+                            });
+
+
+                    if (
+                        cleanPrices.length === 0
+                    ) {
+
+                        return;
 
                     }
 
 
-                    displayProductResults(
-                        data.products
+                    const lowest =
+                        Math.min(
+                            ...cleanPrices.map(
+                                function (item) {
+                                    return item.price;
+                                }
+                            )
+                        );
+
+
+                    const highest =
+                        Math.max(
+                            ...cleanPrices.map(
+                                function (item) {
+                                    return item.price;
+                                }
+                            )
+                        );
+
+
+                    let imageHtml = "";
+
+
+                    if (
+                        product.image_url
+                    ) {
+
+                        imageHtml =
+
+                            '<div class="product-image-wrapper">' +
+
+                                '<img ' +
+
+                                    'src="' +
+                                    product.image_url +
+                                    '" ' +
+
+                                    'alt="' +
+                                    (product.name || "Product") +
+                                    '" ' +
+
+                                    'class="product-image" ' +
+
+                                    'loading="lazy"' +
+
+                                '>' +
+
+                            '</div>';
+
+                    } else {
+
+                        imageHtml =
+
+                            '<div class="product-image-wrapper">' +
+
+                                '<span>🛒</span>' +
+
+                            '</div>';
+
+                    }
+
+
+                    let priceRows = "";
+
+
+                    cleanPrices.forEach(
+                        function (item) {
+
+                            const isCheapest =
+                                item.price === lowest;
+
+
+                            priceRows +=
+
+                                '<div class="price-row">' +
+
+                                    '<div class="price-row-left">' +
+
+                                        '<strong>' +
+
+                                            formatRetailerName(
+                                                item.retailer
+                                            ) +
+
+                                        '</strong>' +
+
+                                        (
+                                            isCheapest
+                                            ?
+                                            '<span class="cheapest-badge">CHEAPEST</span>'
+                                            :
+                                            ''
+                                        ) +
+
+                                    '</div>' +
+
+                                    '<span class="price-value">' +
+
+                                        formatCurrency(
+                                            item.price
+                                        ) +
+
+                                    '</span>' +
+
+                                '</div>';
+
+                        }
                     );
 
 
-                } catch (error) {
+                    const saving =
+                        Math.max(
+                            0,
+                            highest - lowest
+                        );
 
-                    showError(
-                        error.message
+
+                    card.innerHTML =
+
+                        '<div class="product-top">' +
+
+                            imageHtml +
+
+                            '<div class="product-info">' +
+
+                                '<h4>' +
+
+                                    (
+                                        product.name ||
+                                        "Product"
+                                    ) +
+
+                                '</h4>' +
+
+                                '<div class="product-meta">' +
+
+                                    (
+                                        product.barcode
+                                        ?
+                                        "Barcode: " +
+                                        product.barcode
+                                        :
+                                        "Loyalty Hub match"
+                                    ) +
+
+                                '</div>' +
+
+                            '</div>' +
+
+                        '</div>' +
+
+
+                        '<div class="price-list">' +
+
+                            priceRows +
+
+                        '</div>' +
+
+
+                        '<div class="product-saving">' +
+
+                            (
+                                saving > 0
+                                ?
+                                "Potential saving: " +
+                                formatCurrency(saving)
+                                :
+                                "Prices are currently the same across available retailers."
+                            ) +
+
+                        '</div>' +
+
+
+                        '<div class="product-chart-section">' +
+
+                            '<h5>Retailer price comparison</h5>' +
+
+                            '<div class="product-chart-container">' +
+
+                                '<canvas id="productChart' +
+                                index +
+                                '"></canvas>' +
+
+                            '</div>' +
+
+                        '</div>';
+
+
+                    results.appendChild(
+                        card
                     );
 
-                } finally {
 
-                    button.disabled =
-                        false;
-
-                    loading.classList.add(
-                        "hidden"
+                    createProductPriceChart(
+                        "productChart" + index,
+                        cleanPrices
                     );
 
                 }
+            );
+
+
+            results.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest"
+            });
+
+        }
+
+
+
+        // =====================================================
+        // PRODUCT PRICE CHART
+        // =====================================================
+
+        function createProductPriceChart(
+            canvasId,
+            prices
+        ) {
+
+            const canvas =
+                document.getElementById(
+                    canvasId
+                );
+
+
+            if (
+                !canvas ||
+                !window.Chart
+            ) {
+
+                return;
+
+            }
+
+
+            const labels = [];
+
+            const values = [];
+
+
+            prices.forEach(
+                function (price) {
+
+                    labels.push(
+                        formatRetailerName(
+                            price.retailer
+                        )
+                    );
+
+
+                    values.push(
+                        Number(price.price) || 0
+                    );
+
+                }
+            );
+
+
+            if (
+                labels.length === 0
+            ) {
+
+                return;
+
+            }
+
+
+            const sortedValues =
+                [...values].sort(
+                    function (a, b) {
+                        return a - b;
+                    }
+                );
+
+
+            const backgroundColors =
+                values.map(
+                    function (value) {
+
+                        const rank =
+                            sortedValues.indexOf(
+                                value
+                            );
+
+
+                        if (
+                            rank === 0
+                        ) {
+
+                            // Cheapest
+                            return "#2f8f6b";
+
+                        }
+
+
+                        if (
+                            rank ===
+                            sortedValues.length - 1
+                        ) {
+
+                            // Most expensive
+                            return "#d9534f";
+
+                        }
+
+
+                        if (
+                            rank ===
+                            sortedValues.length - 2
+                        ) {
+
+                            // Expensive
+                            return "#e58f3a";
+
+                        }
+
+
+                        // Moderate
+                        return "#4c8fc7";
+
+                    }
+                );
+
+
+            new Chart(
+                canvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels: labels,
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Price",
+
+                                data:
+                                    values,
+
+                                backgroundColor:
+                                    backgroundColors,
+
+                                borderRadius: 7,
+
+                                borderSkipped:
+                                    false
+
+                            }
+
+                        ]
+
+                    },
+
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            },
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    label:
+                                        function (
+                                            context
+                                        ) {
+
+                                            return " " +
+                                                formatCurrency(
+                                                    context.raw
+                                                );
+
+                                        }
+
+                                }
+
+                            }
+
+                        },
+
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero:
+                                    true,
+
+                                ticks: {
+
+                                    callback:
+                                        function (
+                                            value
+                                        ) {
+
+                                            return "R" +
+                                                value;
+
+                                        }
+
+                                }
+
+                            },
+
+                            x: {
+
+                                grid: {
+                                    display: false
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+
+        // =====================================================
+        // RECEIPT UPLOAD
+        // =====================================================
+
+        const receipt =
+            document.getElementById(
+                "receipt"
+            );
+
+
+        const selectedReceipt =
+            document.getElementById(
+                "selectedReceipt"
+            );
+
+
+        if (receipt) {
+
+            receipt.addEventListener(
+                "change",
+                function () {
+
+                    if (
+                        receipt.files &&
+                        receipt.files.length > 0
+                    ) {
+
+                        const file =
+                            receipt.files[0];
+
+
+                        if (
+                            selectedReceipt
+                        ) {
+
+                            selectedReceipt.textContent =
+                                "Selected receipt: " +
+                                file.name;
+
+
+                            selectedReceipt.classList.remove(
+                                "hidden"
+                            );
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        const receiptForm =
+            document.getElementById(
+                "receiptForm"
+            );
+
+
+        if (receiptForm) {
+
+            receiptForm.addEventListener(
+                "submit",
+                analyseReceipt
+            );
+
+        }
+
+
+        async function analyseReceipt(
+            event
+        ) {
+
+            event.preventDefault();
+
+
+            hideError(
+                "receiptError"
+            );
+
+
+            if (
+                !receipt ||
+                !receipt.files ||
+                receipt.files.length === 0
+            ) {
+
+                showError(
+                    "receiptError",
+                    "Please choose a receipt image first."
+                );
+
+                return;
+
+            }
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "receipt",
+                receipt.files[0]
+            );
+
+
+            const analyseButton =
+                document.getElementById(
+                    "analyseButton"
+                );
+
+
+            analyseButton.disabled =
+                true;
+
+
+            analyseButton.textContent =
+                "Analysing receipt...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/analyse",
+                        {
+
+                            method: "POST",
+
+                            body:
+                                formData
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to analyse the receipt."
+                    );
+
+                }
+
+
+                displayReceiptDashboard(
+                    data
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Receipt error:",
+                    error
+                );
+
+
+                showError(
+                    "receiptError",
+                    error.message ||
+                    "Something went wrong while analysing the receipt."
+                );
+
+
+            } finally {
+
+                analyseButton.disabled =
+                    false;
+
+
+                analyseButton.textContent =
+                    "Analyse Receipt";
+
+            }
+
+        }
+
+
+
+        function displayReceiptDashboard(
+            data
+        ) {
+
+            const dashboard =
+                document.getElementById(
+                    "dashboard"
+                );
+
+
+            if (!dashboard) {
+                return;
+            }
+
+
+            dashboard.classList.remove(
+                "hidden"
+            );
+
+
+            const items =
+                Array.isArray(data.items)
+                ? data.items
+                : Array.isArray(data.receipt_items)
+                ? data.receipt_items
+                : [];
+
+
+            const totalItems =
+                document.getElementById(
+                    "totalItems"
+                );
+
+
+            if (totalItems) {
+
+                totalItems.textContent =
+                    items.length;
+
+            }
+
+
+            const currentTotal =
+                document.getElementById(
+                    "currentTotal"
+                );
+
+
+            const total =
+                Number(
+                    data.current_total ??
+                    data.total ??
+                    data.receipt_total ??
+                    0
+                );
+
+
+            if (currentTotal) {
+
+                currentTotal.textContent =
+                    formatCurrency(
+                        total
+                    );
+
+            }
+
+
+            const potentialSavings =
+                document.getElementById(
+                    "potentialSavings"
+                );
+
+
+            const savings =
+                Math.max(
+                    0,
+                    Number(
+                        data.potential_savings ??
+                        data.savings ??
+                        0
+                    )
+                );
+
+
+            if (potentialSavings) {
+
+                potentialSavings.textContent =
+                    formatCurrency(
+                        savings
+                    );
+
+            }
+
+
+            displayComparisonTable(
+                data
+            );
+
+
+            createStoreChart(
+                data
+            );
+
+
+            createSavingChart(
+                data
+            );
+
+
+            dashboard.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest"
+            });
+
+        }
+
+
+
+        // =====================================================
+        // RECEIPT COMPARISON TABLE
+        // =====================================================
+
+        function displayComparisonTable(
+            data
+        ) {
+
+            const tableContainer =
+                document.getElementById(
+                    "comparisonTable"
+                );
+
+
+            if (!tableContainer) {
+                return;
+            }
+
+
+            const comparisons =
+                Array.isArray(
+                    data.comparisons
+                )
+                ? data.comparisons
+                : Array.isArray(
+                    data.items
+                )
+                ? data.items
+                : [];
+
+
+            if (
+                comparisons.length === 0
+            ) {
+
+                tableContainer.innerHTML =
+                    "<p class='product-meta'>No comparison details were returned.</p>";
+
+                return;
+
+            }
+
+
+            let rows = "";
+
+
+            comparisons.forEach(
+                function (item) {
+
+                    const name =
+                        item.name ||
+                        item.product ||
+                        item.item ||
+                        "Product";
+
+
+                    const currentPrice =
+                        Number(
+                            item.current_price ??
+                            item.receipt_price ??
+                            item.price ??
+                            0
+                        );
+
+
+                    const cheapest =
+                        Number(
+                            item.cheapest_price ??
+                            item.lowest_price ??
+                            item.best_price ??
+                            0
+                        );
+
+
+                    const retailer =
+                        item.cheapest_retailer ||
+                        item.best_retailer ||
+                        "";
+
+
+                    rows +=
+
+                        "<tr>" +
+
+                            "<td>" +
+                                name +
+                            "</td>" +
+
+                            "<td>" +
+                                formatCurrency(
+                                    currentPrice
+                                ) +
+                            "</td>" +
+
+                            "<td class='table-cheapest'>" +
+
+                                (
+                                    cheapest > 0
+                                    ?
+                                    formatCurrency(
+                                        cheapest
+                                    )
+                                    :
+                                    "—"
+                                ) +
+
+                            "</td>" +
+
+                            "<td>" +
+
+                                (
+                                    retailer
+                                    ?
+                                    formatRetailerName(
+                                        retailer
+                                    )
+                                    :
+                                    "—"
+                                ) +
+
+                            "</td>" +
+
+                        "</tr>";
+
+                }
+            );
+
+
+            tableContainer.innerHTML =
+
+                "<div style='overflow-x:auto;'>" +
+
+                    "<table class='comparison-table'>" +
+
+                        "<thead>" +
+
+                            "<tr>" +
+
+                                "<th>Product</th>" +
+
+                                "<th>Paid</th>" +
+
+                                "<th>Best price</th>" +
+
+                                "<th>Best retailer</th>" +
+
+                            "</tr>" +
+
+                        "</thead>" +
+
+                        "<tbody>" +
+
+                            rows +
+
+                        "</tbody>" +
+
+                    "</table>" +
+
+                "</div>";
+
+        }
+
+
+
+        // =====================================================
+        // RECEIPT STORE CHART
+        // =====================================================
+
+        function createStoreChart(
+            data
+        ) {
+
+            const canvas =
+                document.getElementById(
+                    "storeChart"
+                );
+
+
+            if (
+                !canvas ||
+                !window.Chart
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                window.mzansiStoreChart
+            ) {
+
+                window.mzansiStoreChart.destroy();
+
+            }
+
+
+            const retailers =
+                data.retailer_totals ||
+                data.store_totals ||
+                data.retailer_comparison ||
+                {};
+
+
+            let labels = [];
+
+            let values = [];
+
+
+            if (
+                retailers &&
+                typeof retailers === "object" &&
+                !Array.isArray(retailers)
+            ) {
+
+                Object.keys(
+                    retailers
+                ).forEach(
+                    function (retailer) {
+
+                        const value =
+                            Number(
+                                retailers[retailer]
+                            );
+
+
+                        if (
+                            !isNaN(value)
+                        ) {
+
+                            labels.push(
+                                formatRetailerName(
+                                    retailer
+                                )
+                            );
+
+                            values.push(
+                                value
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            if (
+                labels.length === 0 &&
+                Array.isArray(
+                    data.retailer_totals
+                )
+            ) {
+
+                data.retailer_totals.forEach(
+                    function (item) {
+
+                        labels.push(
+                            formatRetailerName(
+                                item.retailer
+                            )
+                        );
+
+                        values.push(
+                            Number(
+                                item.total
+                            ) || 0
+                        );
+
+                    }
+                );
+
+            }
+
+
+            if (
+                labels.length === 0
+            ) {
+
+                return;
+
+            }
+
+
+            window.mzansiStoreChart =
+                new Chart(
+                    canvas,
+                    {
+
+                        type: "bar",
+
+                        data: {
+
+                            labels: labels,
+
+                            datasets: [
+
+                                {
+
+                                    label:
+                                        "Basket total",
+
+                                    data:
+                                        values,
+
+                                    backgroundColor:
+                                        "#4c8fc7",
+
+                                    borderRadius:
+                                        7,
+
+                                    borderSkipped:
+                                        false
+
+                                }
+
+                            ]
+
+                        },
+
+
+                        options: {
+
+                            responsive: true,
+
+                            maintainAspectRatio:
+                                false,
+
+                            plugins: {
+
+                                legend: {
+                                    display: false
+                                },
+
+                                tooltip: {
+
+                                    callbacks: {
+
+                                        label:
+                                            function (
+                                                context
+                                            ) {
+
+                                                return " " +
+                                                    formatCurrency(
+                                                        context.raw
+                                                    );
+
+                                            }
+
+                                    }
+
+                                }
+
+                            },
+
+
+                            scales: {
+
+                                y: {
+
+                                    beginAtZero:
+                                        true,
+
+                                    ticks: {
+
+                                        callback:
+                                            function (
+                                                value
+                                            ) {
+
+                                                return "R" +
+                                                    value;
+
+                                            }
+
+                                    }
+
+                                },
+
+                                x: {
+
+                                    grid: {
+                                        display: false
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+                );
+
+        }
+
+
+
+        // =====================================================
+        // SAVINGS CHART
+        // =====================================================
+
+        function createSavingChart(
+            data
+        ) {
+
+            const canvas =
+                document.getElementById(
+                    "savingChart"
+                );
+
+
+            if (
+                !canvas ||
+                !window.Chart
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                window.mzansiSavingChart
+            ) {
+
+                window.mzansiSavingChart.destroy();
+
+            }
+
+
+            const current =
+                Number(
+                    data.current_total ??
+                    data.total ??
+                    data.receipt_total ??
+                    0
+                );
+
+
+            const savings =
+                Math.max(
+                    0,
+                    Number(
+                        data.potential_savings ??
+                        data.savings ??
+                        0
+                    )
+                );
+
+
+            if (
+                current <= 0
+            ) {
+
+                return;
+
+            }
+
+
+            const best =
+                Math.max(
+                    0,
+                    current - savings
+                );
+
+
+            window.mzansiSavingChart =
+                new Chart(
+                    canvas,
+                    {
+
+                        type: "doughnut",
+
+                        data: {
+
+                            labels: [
+                                "Best possible total",
+                                "Potential savings"
+                            ],
+
+                            datasets: [
+
+                                {
+
+                                    data: [
+                                        best,
+                                        savings
+                                    ],
+
+                                    backgroundColor: [
+                                        "#2f8f6b",
+                                        "#e58f3a"
+                                    ],
+
+                                    borderWidth: 0
+
+                                }
+
+                            ]
+
+                        },
+
+
+                        options: {
+
+                            responsive: true,
+
+                            maintainAspectRatio:
+                                false,
+
+                            cutout:
+                                "68%",
+
+                            plugins: {
+
+                                legend: {
+                                    position: "bottom"
+                                }
+
+                            }
+
+                        }
+
+                    }
+                );
+
+        }
+
+
+
+        // =====================================================
+        // STAR RATING
+        // =====================================================
+
+        const ratingStars =
+            document.querySelectorAll(
+                ".rating-star"
+            );
+
+
+        const selectedRating =
+            document.getElementById(
+                "selectedRating"
+            );
+
+
+        const ratingHelper =
+            document.getElementById(
+                "ratingHelper"
+            );
+
+
+        ratingStars.forEach(
+            function (star) {
+
+                star.addEventListener(
+                    "mouseenter",
+                    function () {
+
+                        const rating =
+                            Number(
+                                star.dataset.rating
+                            );
+
+
+                        highlightRating(
+                            rating
+                        );
+
+                    }
+                );
+
+
+                star.addEventListener(
+                    "click",
+                    function () {
+
+                        const rating =
+                            Number(
+                                star.dataset.rating
+                            );
+
+
+                        if (
+                            selectedRating
+                        ) {
+
+                            selectedRating.value =
+                                rating;
+
+                        }
+
+
+                        highlightRating(
+                            rating
+                        );
+
+
+                        if (
+                            ratingHelper
+                        ) {
+
+                            ratingHelper.textContent =
+                                "You selected " +
+                                rating +
+                                " out of 5 stars.";
+
+                        }
+
+                    }
+                );
 
             }
         );
 
-    }
 
-
-    /* =========================================
-       DISPLAY PRODUCT RESULTS
-    ========================================== */
-
-    function displayProductResults(
-        products
-    ) {
-
-        const result =
+        const ratingContainer =
             document.getElementById(
-                "productResult"
+                "reviewStars"
             );
 
 
-        if (!result) {
-            return;
+        if (ratingContainer) {
+
+            ratingContainer.addEventListener(
+                "mouseleave",
+                function () {
+
+                    const current =
+                        Number(
+                            selectedRating
+                            ? selectedRating.value
+                            : 0
+                        );
+
+
+                    highlightRating(
+                        current
+                    );
+
+                }
+            );
+
         }
 
 
-        result.innerHTML = "";
-
-
-        if (
-            !products ||
-            products.length === 0
+        function highlightRating(
+            rating
         ) {
 
-            result.innerHTML = `
-                <div class="product-results-heading">
-                    <h3>No products found</h3>
-                    <p>
-                        Try a different product name.
-                    </p>
-                </div>
-            `;
+            ratingStars.forEach(
+                function (star) {
+
+                    const starNumber =
+                        Number(
+                            star.dataset.rating
+                        );
+
+
+                    if (
+                        starNumber <= rating
+                    ) {
+
+                        star.textContent =
+                            "★";
+
+                        star.classList.add(
+                            "active"
+                        );
+
+                    } else {
+
+                        star.textContent =
+                            "☆";
+
+                        star.classList.remove(
+                            "active"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+
+        // =====================================================
+        // SENTIMENT ANALYSIS
+        // =====================================================
+
+        const sentimentButton =
+            document.getElementById(
+                "sentimentButton"
+            );
+
+
+        if (sentimentButton) {
+
+            sentimentButton.addEventListener(
+                "click",
+                analyseSentiment
+            );
+
+        }
+
+
+        async function analyseSentiment() {
+
+            const review =
+                document.getElementById(
+                    "review"
+                );
+
+
+            const text =
+                review
+                ? review.value.trim()
+                : "";
+
+
+            hideError(
+                "sentimentError"
+            );
+
+
+            if (!text) {
+
+                showError(
+                    "sentimentError",
+                    "Please enter a grocery review first."
+                );
+
+                return;
+
+            }
+
+
+            sentimentButton.disabled =
+                true;
+
+
+            sentimentButton.textContent =
+                "Analysing...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/sentiment",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    review: text
+                                })
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "Sentiment response:",
+                    data
+                );
+
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to analyse sentiment."
+                    );
+
+                }
+
+
+                displaySentiment(
+                    data
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Sentiment error:",
+                    error
+                );
+
+
+                showError(
+                    "sentimentError",
+                    error.message ||
+                    "Something went wrong while analysing the review."
+                );
+
+
+            } finally {
+
+                sentimentButton.disabled =
+                    false;
+
+
+                sentimentButton.textContent =
+                    "Analyse Sentiment";
+
+            }
+
+        }
+
+
+
+        // =====================================================
+        // DISPLAY SENTIMENT
+        // =====================================================
+
+        function displaySentiment(
+            data
+        ) {
+
+            const result =
+                document.getElementById(
+                    "sentimentResult"
+                );
+
+
+            if (!result) {
+                return;
+            }
 
 
             result.classList.remove(
                 "hidden"
             );
 
-            return;
 
-        }
-
-
-        const heading =
-            document.createElement(
-                "div"
-            );
-
-
-        heading.className =
-            "product-results-heading";
-
-
-        heading.innerHTML = `
-            <h3>Products found</h3>
-            <p>
-                Compare available prices across retailers.
-            </p>
-        `;
-
-
-        result.appendChild(
-            heading
-        );
-
-
-        products.forEach(
-            function(product, index) {
-
-                const card =
-                    createProductCard(
-                        product,
-                        index
-                    );
-
-
-                result.appendChild(
-                    card
-                );
-
-            }
-        );
-
-
-        result.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    /* =========================================
-       PRODUCT CARD
-    ========================================== */
-
-    function createProductCard(
-        product,
-        index
-    ) {
-
-        const card =
-            document.createElement(
-                "div"
-            );
-
-
-        card.className =
-            "product-card";
-
-
-        const productName =
-            product.name ||
-            "Unknown product";
-
-
-        const prices =
-            Array.isArray(
-                product.prices
-            )
-                ? product.prices
-                : [];
-
-
-        const cheapest =
-            product.cheapest ||
-            {};
-
-
-        const cheapestRetailer =
-            formatRetailerName(
-                cheapest.retailer
-            );
-
-
-        const cheapestPrice =
-            Number(
-                cheapest.price || 0
-            );
-
-
-        const potentialSaving =
-            Number(
-                product.potential_saving ||
-                0
-            );
-
-
-        card.innerHTML = `
-
-            <div class="product-card-header">
-
-                <div>
-
-                    <h3>
-                        ${productName}
-                    </h3>
-
-                </div>
-
-
-                <div class="cheapest-badge">
-
-                    Cheapest:
-                    <strong>
-                        ${cheapestRetailer}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div class="product-summary">
-
-                <div class="stat-card">
-
-                    <span>
-                        Cheapest Price
-                    </span>
-
-                    <strong>
-                        ${formatCurrency(
-                            cheapestPrice
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="stat-card saving">
-
-                    <span>
-                        Potential Saving
-                    </span>
-
-                    <strong>
-                        ${formatCurrency(
-                            potentialSaving
-                        )}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Retailer
-                            </th>
-
-                            <th>
-                                Price
-                            </th>
-
-                            <th>
-                                Availability
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            prices.map(
-                                function(item) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${
-                                                    formatRetailerName(
-                                                        item.retailer
-                                                    )
-                                                }
-                                            </td>
-
-                                            <td>
-                                                ${
-                                                    formatCurrency(
-                                                        item.price
-                                                    )
-                                                }
-                                            </td>
-
-                                            <td>
-                                                ${
-                                                    item.in_stock
-                                                        ? "Available"
-                                                        : "Out of stock"
-                                                }
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-
-                                }
-                            ).join("")
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            <div class="product-chart-section">
-
-                <h4>
-                    Retailer price comparison
-                </h4>
-
-                <canvas
-                    id="productChart-${index}"
-                ></canvas>
-
-            </div>
-
-
-            <p class="price-source">
-                Prices via Loyalty Hub
-            </p>
-
-        `;
-
-
-        const canvas =
-            card.querySelector(
-                `#productChart-${index}`
-            );
-
-
-        setTimeout(
-            function() {
-
-                createProductPriceChart(
-                    canvas.id,
-                    prices
-                );
-
-            },
-            0
-        );
-
-
-        return card;
-
-    }
-
-
-    /* =========================================
-       PRODUCT PRICE CHART
-    ========================================== */
-
-    function createProductPriceChart(
-        canvasId,
-        prices
-    ) {
-
-        const canvas =
-            document.getElementById(
-                canvasId
-            );
-
-
-        if (!canvas) {
-            return;
-        }
-
-
-        if (
-            !prices ||
-            prices.length === 0
-        ) {
-
-            return;
-
-        }
-
-
-        const retailers = [];
-
-        const priceValues = [];
-
-        const backgroundColors = [];
-
-
-        let cheapestPrice =
-            Infinity;
-
-
-        prices.forEach(
-            function(item) {
-
-                const price =
-                    Number(
-                        item.price
-                    ) || 0;
-
-
-                if (
-                    price > 0 &&
-                    price < cheapestPrice
-                ) {
-
-                    cheapestPrice =
-                        price;
-
-                }
-
-            }
-        );
-
-
-        prices.forEach(
-            function(item) {
-
-                const retailer =
-                    formatRetailerName(
-                        item.retailer
-                    );
-
-
-                const price =
-                    Number(
-                        item.price
-                    ) || 0;
-
-
-                retailers.push(
-                    retailer
-                );
-
-
-                priceValues.push(
-                    price
-                );
-
-
-                if (
-                    price ===
-                    cheapestPrice
-                ) {
-
-                    backgroundColors.push(
-                        "#2f8f6b"
-                    );
-
-                } else {
-
-                    backgroundColors.push(
-                        "#4c8fc7"
-                    );
-
-                }
-
-            }
-        );
-
-
-        new Chart(
-            canvas,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels:
-                        retailers,
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "Price",
-
-                            data:
-                                priceValues,
-
-                            backgroundColor:
-                                backgroundColors,
-
-                            borderRadius:
-                                8,
-
-                            borderSkipped:
-                                false,
-
-                            barThickness:
-                                32
-
-                        }
-
-                    ]
-
-                },
-
-
-                options: {
-
-                    responsive:
-                        true,
-
-                    maintainAspectRatio:
-                        false,
-
-
-                    plugins: {
-
-                        legend: {
-                            display: false
-                        },
-
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function(
-                                        context
-                                    ) {
-
-                                        return formatCurrency(
-                                            context.raw
-                                        );
-
-                                    }
-
-                            }
-
-                        }
-
-                    },
-
-
-                    scales: {
-
-                        x: {
-
-                            grid: {
-                                display: false
-                            },
-
-                            ticks: {
-
-                                color:
-                                    "#64756e",
-
-                                font: {
-                                    size: 11
-                                }
-
-                            }
-
-                        },
-
-
-                        y: {
-
-                            beginAtZero:
-                                true,
-
-                            grid: {
-
-                                color:
-                                    "#e8efec"
-
-                            },
-
-                            ticks: {
-
-                                color:
-                                    "#71827b",
-
-                                callback:
-                                    function(
-                                        value
-                                    ) {
-
-                                        return "R" +
-                                            value;
-
-                                    }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       RECEIPT ANALYSIS
-    ========================================== */
-
-    const receiptForm =
-        document.getElementById(
-            "receiptForm"
-        );
-
-
-    if (receiptForm) {
-
-        receiptForm.addEventListener(
-            "submit",
-            async function(event) {
-
-                event.preventDefault();
-
-                hideError();
-
-
-                const receipt =
-                    document.getElementById(
-                        "receipt"
-                    );
-
-
-                const button =
-                    document.getElementById(
-                        "analyseButton"
-                    );
-
-
-                const loading =
-                    document.getElementById(
-                        "loading"
-                    );
-
-
-                if (
-                    !receipt.files ||
-                    receipt.files.length === 0
-                ) {
-
-                    showError(
-                        "Please select a receipt image."
-                    );
-
-                    return;
-
-                }
-
-
-                const file =
-                    receipt.files[0];
-
-
-                button.disabled =
-                    true;
-
-
-                loading.classList.remove(
-                    "hidden"
-                );
-
-
-                try {
-
-                    const reader =
-                        new FileReader();
-
-
-                    const imageData =
-                        await new Promise(
-                            function(
-                                resolve,
-                                reject
-                            ) {
-
-                                reader.onload =
-                                    function() {
-
-                                        resolve(
-                                            reader.result
-                                        );
-
-                                    };
-
-
-                                reader.onerror =
-                                    reject;
-
-
-                                reader.readAsDataURL(
-                                    file
-                                );
-
-                            }
-                        );
-
-
-                    const response =
-                        await fetch(
-                            "/analyse",
-                            {
-
-                                method:
-                                    "POST",
-
-                                headers: {
-
-                                    "Content-Type":
-                                        "application/json"
-
-                                },
-
-                                body:
-                                    JSON.stringify({
-                                        image:
-                                            imageData
-                                    })
-
-                            }
-                        );
-
-
-                    const data =
-                        await response.json();
-
-
-                    if (
-                        !response.ok ||
-                        !data.success
-                    ) {
-
-                        throw new Error(
-                            data.error ||
-                            "Unable to analyse receipt."
-                        );
-
-                    }
-
-
-                    displayDashboard(
-                        data
-                    );
-
-
-                } catch (error) {
-
-                    showError(
-                        error.message
-                    );
-
-                } finally {
-
-                    button.disabled =
-                        false;
-
-                    loading.classList.add(
-                        "hidden"
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       DASHBOARD
-    ========================================== */
-
-    function displayDashboard(
-        data
-    ) {
-
-        const dashboard =
-            document.getElementById(
-                "dashboard"
-            );
-
-
-        if (!dashboard) {
-            return;
-        }
-
-
-        const receiptTotal =
-            document.getElementById(
-                "receiptTotal"
-            );
-
-
-        const possibleSaving =
-            document.getElementById(
-                "possibleSaving"
-            );
-
-
-        const itemCount =
-            document.getElementById(
-                "itemCount"
-            );
-
-
-        const cheapestStore =
-            document.getElementById(
-                "cheapestStore"
-            );
-
-
-        const items =
-            data.items ||
-            [];
-
-
-        const totals =
-            data.totals ||
-            {};
-
-
-        if (receiptTotal) {
-
-            receiptTotal.textContent =
-                formatCurrency(
-                    data.receipt_total
-                );
-
-        }
-
-
-        if (possibleSaving) {
-
-            possibleSaving.textContent =
-                formatCurrency(
-                    data.possible_saving
-                );
-
-        }
-
-
-        if (itemCount) {
-
-            itemCount.textContent =
-                items.length;
-
-        }
-
-
-        if (cheapestStore) {
-
-            cheapestStore.textContent =
-                data.cheapest_store ||
-                "-";
-
-        }
-
-
-        displayComparisonTable(
-            items
-        );
-
-
-        createStoreChart(
-            totals
-        );
-
-
-        createSavingChart(
-            items
-        );
-
-
-        dashboard.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    /* =========================================
-       COMPARISON TABLE
-    ========================================== */
-
-    function displayComparisonTable(
-        items
-    ) {
-
-        const table =
-            document.getElementById(
-                "comparisonTable"
-            );
-
-
-        if (!table) {
-            return;
-        }
-
-
-        table.innerHTML = "";
-
-
-        items.forEach(
-            function(item) {
-
-                const row =
-                    document.createElement(
-                        "tr"
-                    );
-
-
-                row.innerHTML = `
-
-                    <td>
-                        ${
-                            item.name ||
-                            "Unknown"
-                        }
-                    </td>
-
-                    <td>
-                        ${
-                            formatCurrency(
-                                item.receipt_price
-                            )
-                        }
-                    </td>
-
-                    <td>
-                        ${
-                            formatRetailerName(
-                                item.cheapest_retailer
-                            )
-                        }
-                        ${
-                            formatCurrency(
-                                item.cheapest_price
-                            )
-                        }
-                    </td>
-
-                    <td>
-                        ${
-                            formatCurrency(
-                                item.saving
-                            )
-                        }
-                    </td>
-
-                `;
-
-
-                table.appendChild(
-                    row
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       STORE CHART
-    ========================================== */
-
-    function createStoreChart(
-        totals
-    ) {
-
-        const canvas =
-            document.getElementById(
-                "storeChart"
-            );
-
-
-        if (!canvas) {
-            return;
-        }
-
-
-        const labels =
-            Object.keys(
-                totals
-            );
-
-
-        const values =
-            Object.values(
-                totals
-            );
-
-
-        new Chart(
-            canvas,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels:
-                        labels.map(
-                            formatRetailerName
-                        ),
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "Basket Total",
-
-                            data:
-                                values,
-
-                            backgroundColor:
-                                "#2f8f6b",
-
-                            borderRadius:
-                                8
-
-                        }
-
-                    ]
-
-                },
-
-
-                options: {
-
-                    responsive:
-                        true,
-
-                    plugins: {
-
-                        legend: {
-                            display: false
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function(
-                                        context
-                                    ) {
-
-                                        return formatCurrency(
-                                            context.raw
-                                        );
-
-                                    }
-
-                            }
-
-                        }
-
-                    },
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero:
-                                true,
-
-                            ticks: {
-
-                                callback:
-                                    function(
-                                        value
-                                    ) {
-
-                                        return "R" +
-                                            value;
-
-                                    }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       SAVING CHART
-    ========================================== */
-
-    function createSavingChart(
-        items
-    ) {
-
-        const canvas =
-            document.getElementById(
-                "savingChart"
-            );
-
-
-        if (!canvas) {
-            return;
-        }
-
-
-        const labels =
-            items.map(
-                function(item) {
-
-                    return item.name ||
-                        "Unknown";
-
-                }
-            );
-
-
-        const values =
-            items.map(
-                function(item) {
-
-                    return Number(
-                        item.saving
-                    ) || 0;
-
-                }
-            );
-
-
-        new Chart(
-            canvas,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels:
-                        labels,
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "Potential Saving",
-
-                            data:
-                                values,
-
-                            backgroundColor:
-                                "#4c8fc7",
-
-                            borderRadius:
-                                8
-
-                        }
-
-                    ]
-
-                },
-
-
-                options: {
-
-                    responsive:
-                        true,
-
-                    plugins: {
-
-                        legend: {
-                            display: false
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function(
-                                        context
-                                    ) {
-
-                                        return formatCurrency(
-                                            context.raw
-                                        );
-
-                                    }
-
-                            }
-
-                        }
-
-                    },
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero:
-                                true,
-
-                            ticks: {
-
-                                callback:
-                                    function(
-                                        value
-                                    ) {
-
-                                        return "R" +
-                                            value;
-
-                                    }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       SENTIMENT ANALYSIS
-    ========================================== */
-
-    const sentimentButton =
-        document.getElementById(
-            "sentimentButton"
-        );
-
-
-    if (sentimentButton) {
-
-        sentimentButton.addEventListener(
-            "click",
-            async function() {
-
-                hideError();
-
-
-                const review =
-                    document.getElementById(
-                        "review"
-                    );
-
-
-                const result =
-                    document.getElementById(
-                        "sentimentResult"
-                    );
-
-
-                const text =
-                    review.value.trim();
-
-
-                if (!text) {
-
-                    showError(
-                        "Please enter a review first."
-                    );
-
-                    return;
-
-                }
-
-
-                sentimentButton.disabled =
-                    true;
-
-
-                try {
-
-                    const response =
-                        await fetch(
-                            "/sentiment",
-                            {
-
-                                method:
-                                    "POST",
-
-                                headers: {
-
-                                    "Content-Type":
-                                        "application/json"
-
-                                },
-
-                                body:
-                                    JSON.stringify({
-                                        review:
-                                            text
-                                    })
-
-                            }
-                        );
-
-
-                    const data =
-                        await response.json();
-
-
-                    if (
-                        !response.ok ||
-                        !data.success
-                    ) {
-
-                        throw new Error(
-                            data.error ||
-                            "Unable to analyse sentiment."
-                        );
-
-                    }
-
-
-                    displaySentiment(
-                        data.sentiment
-                    );
-
-
-                    if (result) {
-
-                        result.classList.remove(
-                            "hidden"
-                        );
-
-                    }
-
-
-                } catch (error) {
-
-                    showError(
-                        error.message
-                    );
-
-                } finally {
-
-                    sentimentButton.disabled =
-                        false;
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================
-       DISPLAY SENTIMENT
-    ========================================== */
-
-    function displaySentiment(
-        sentiment
-    ) {
-
-        const sentimentLabel =
-            document.getElementById(
-                "sentimentLabel"
-            );
-
-
-        const sentimentScore =
-            document.getElementById(
-                "sentimentScore"
-            );
-
-
-        const sentimentSummary =
-            document.getElementById(
-                "sentimentSummary"
-            );
-
-
-        const qualityNumber =
-            document.getElementById(
-                "qualityNumber"
-            );
-
-
-        const qualityBarFill =
-            document.getElementById(
-                "qualityBarFill"
-            );
-
-
-        const sentimentMarker =
-            document.getElementById(
-                "sentimentMarker"
-            );
-
-
-        const label =
-            sentiment.label ||
-            "Unknown";
-
-
-        const score =
-            Number(
-                sentiment.score
-            );
-
-
-        /* =========================
-           SENTIMENT LABEL
-        ========================= */
-
-        let emoji =
-            "😐";
-
-
-        if (
-            label
-                .toLowerCase()
-                .includes("positive")
-        ) {
-
-            emoji =
-                "😊";
-
-        } else if (
-            label
-                .toLowerCase()
-                .includes("negative")
-        ) {
-
-            emoji =
-                "☹️";
-
-        }
-
-
-        if (sentimentLabel) {
-
-            sentimentLabel.textContent =
-                emoji +
-                " " +
-                label;
-
-        }
-
-
-        /* =========================
-           SENTIMENT SCORE
-        ========================= */
-
-        if (sentimentScore) {
-
-            if (isNaN(score)) {
-
-                sentimentScore.textContent =
-                    "0.00";
-
-            } else {
-
-                sentimentScore.textContent =
-                    score >= 0
-                        ? "+" +
-                          score.toFixed(2)
-                        : score.toFixed(2);
-
-            }
-
-        }
-
-
-        /* =========================
-           AI SUMMARY
-        ========================= */
-
-        if (sentimentSummary) {
-
-            sentimentSummary.textContent =
-                sentiment.summary ||
-                "No summary available.";
-
-        }
-
-
-        /* =========================
-           QUALITY SCORE
-        ========================= */
-
-        let quality =
-            (
-                (
-                    score + 1
-                ) / 2
-            ) * 100;
-
-
-        if (isNaN(quality)) {
-
-            quality =
-                0;
-
-        }
-
-
-        quality =
-            Math.round(
-                quality
-            );
-
-
-        if (qualityNumber) {
-
-            qualityNumber.textContent =
-                quality;
-
-        }
-
-
-        /* =========================
-           QUALITY BAR
-        ========================= */
-
-        if (qualityBarFill) {
-
-            qualityBarFill.style.width =
-                quality +
-                "%";
-
-        }
-
-
-        /* =========================
-           SENTIMENT MARKER
-        ========================= */
-
-        if (sentimentMarker) {
-
-            let markerPosition =
-                (
-                    (
-                        score + 1
-                    ) / 2
-                ) * 100;
+            // -------------------------------------------------
+            // SENTIMENT LABEL
+            // -------------------------------------------------
+
+            let rawLabel =
+                data.label ??
+                data.sentiment ??
+                data.classification ??
+                "Neutral";
 
 
             if (
-                isNaN(
-                    markerPosition
-                )
+                typeof rawLabel === "object" &&
+                rawLabel !== null
             ) {
 
-                markerPosition =
-                    50;
+                rawLabel =
+                    rawLabel.label ??
+                    rawLabel.sentiment ??
+                    rawLabel.name ??
+                    "Neutral";
 
             }
 
 
-            markerPosition =
+            let sentimentLabel =
+                String(
+                    rawLabel
+                );
+
+
+            // -------------------------------------------------
+            // SCORE
+            // -------------------------------------------------
+
+            let rawScore =
+                data.score ??
+                data.sentiment_score ??
+                data.sentimentScore ??
+                0;
+
+
+            if (
+                typeof rawScore === "object" &&
+                rawScore !== null
+            ) {
+
+                rawScore =
+                    rawScore.score ??
+                    rawScore.value ??
+                    rawScore.sentiment_score ??
+                    0;
+
+            }
+
+
+            let cleanScore =
+                parseFloat(
+                    rawScore
+                );
+
+
+            if (
+                isNaN(cleanScore)
+            ) {
+
+                cleanScore = 0;
+
+            }
+
+
+            cleanScore =
                 Math.max(
-                    0,
+                    -1,
                     Math.min(
-                        100,
-                        markerPosition
+                        1,
+                        cleanScore
                     )
                 );
 
 
-            sentimentMarker.style.left =
-                markerPosition +
-                "%";
+            // -------------------------------------------------
+            // EMOJI
+            // -------------------------------------------------
+
+            const lower =
+                sentimentLabel
+                    .toLowerCase();
+
+
+            let emoji =
+                "😐";
+
+
+            if (
+                lower.includes(
+                    "positive"
+                ) ||
+                lower.includes(
+                    "pos"
+                )
+            ) {
+
+                emoji =
+                    "😊";
+
+            } else if (
+                lower.includes(
+                    "negative"
+                ) ||
+                lower.includes(
+                    "neg"
+                )
+            ) {
+
+                emoji =
+                    "☹️";
+
+            }
+
+
+            const labelElement =
+                document.getElementById(
+                    "sentimentLabel"
+                );
+
+
+            if (labelElement) {
+
+                labelElement.textContent =
+                    emoji +
+                    " " +
+                    sentimentLabel;
+
+            }
+
+
+            // -------------------------------------------------
+            // SCORE DISPLAY
+            // -------------------------------------------------
+
+            const scoreElement =
+                document.getElementById(
+                    "sentimentScore"
+                );
+
+
+            if (scoreElement) {
+
+                scoreElement.textContent =
+
+                    (
+                        cleanScore >= 0
+                        ? "+"
+                        : ""
+                    ) +
+
+                    cleanScore.toFixed(2);
+
+            }
+
+
+            // -------------------------------------------------
+            // SUMMARY
+            // -------------------------------------------------
+
+            let summary =
+                data.summary ??
+                data.explanation ??
+                data.reason ??
+                data.message ??
+                "No summary available.";
+
+
+            if (
+                typeof summary === "object" &&
+                summary !== null
+            ) {
+
+                summary =
+                    summary.text ??
+                    summary.summary ??
+                    summary.explanation ??
+                    summary.reason ??
+                    "No summary available.";
+
+            }
+
+
+            const summaryElement =
+                document.getElementById(
+                    "sentimentSummary"
+                );
+
+
+            if (summaryElement) {
+
+                summaryElement.textContent =
+                    String(
+                        summary
+                    );
+
+            }
+
+
+            // -------------------------------------------------
+            // QUALITY SCORE
+            // -------------------------------------------------
+
+            const quality =
+                Math.round(
+                    (
+                        (cleanScore + 1) /
+                        2
+                    ) * 100
+                );
+
+
+            const qualityNumber =
+                document.getElementById(
+                    "qualityNumber"
+                );
+
+
+            if (qualityNumber) {
+
+                qualityNumber.textContent =
+                    quality;
+
+            }
+
+
+            const qualityBar =
+                document.getElementById(
+                    "qualityBarFill"
+                );
+
+
+            if (qualityBar) {
+
+                qualityBar.style.width =
+                    quality +
+                    "%";
+
+            }
+
+
+            // -------------------------------------------------
+            // SENTIMENT MARKER
+            // -------------------------------------------------
+
+            const marker =
+                document.getElementById(
+                    "sentimentMarker"
+                );
+
+
+            if (marker) {
+
+                const position =
+                    (
+                        (cleanScore + 1) /
+                        2
+                    ) * 100;
+
+
+                marker.style.left =
+                    Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            position
+                        )
+                    ) +
+                    "%";
+
+            }
+
+
+            // -------------------------------------------------
+            // USER STAR RATING
+            // IMPORTANT:
+            // This is kept separate from AI sentiment.
+            // -------------------------------------------------
+
+            const ratingResult =
+                document.getElementById(
+                    "ratingResult"
+                );
+
+
+            const userRating =
+                Number(
+                    selectedRating
+                    ? selectedRating.value
+                    : 0
+                );
+
+
+            if (
+                ratingResult &&
+                userRating > 0
+            ) {
+
+                ratingResult.classList.remove(
+                    "hidden"
+                );
+
+
+                ratingResult.textContent =
+                    "Your rating: " +
+
+                    "★".repeat(
+                        userRating
+                    ) +
+
+                    "☆".repeat(
+                        5 - userRating
+                    );
+
+            }
+
+
+            result.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest"
+            });
 
         }
 
+
+
+        // =====================================================
+        // CURATED GROCERY INSIGHT RATINGS
+        // =====================================================
+
+        const insightCards =
+            document.querySelectorAll(
+                ".insight-card"
+            );
+
+
+        insightCards.forEach(
+            function (card) {
+
+                const rating =
+                    Number(
+                        card.dataset.rating
+                    ) || 0;
+
+
+                const stars =
+                    card.querySelectorAll(
+                        ".insight-star"
+                    );
+
+
+                stars.forEach(
+                    function (
+                        star,
+                        index
+                    ) {
+
+                        const starNumber =
+                            index + 1;
+
+
+                        if (
+                            starNumber <= rating
+                        ) {
+
+                            star.classList.add(
+                                "filled"
+                            );
+
+                        } else {
+
+                            star.classList.remove(
+                                "filled"
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                const ratingText =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                ratingText.className =
+                    "insight-rating-number";
+
+
+                ratingText.textContent =
+                    rating.toFixed(1) +
+                    " / 5";
+
+
+                const starsContainer =
+                    card.querySelector(
+                        ".insight-stars"
+                    );
+
+
+                if (
+                    starsContainer
+                ) {
+
+                    starsContainer.appendChild(
+                        ratingText
+                    );
+
+                }
+
+            }
+        );
+
+
+        console.log(
+            "Mzansi Basket interactions initialised."
+        );
+
+
     }
-
-}
-
-
 );
+

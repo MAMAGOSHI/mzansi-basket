@@ -1,424 +1,629 @@
-<!DOCTYPE html>
 
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
 
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <title>Mzansi Basket</title>
 
-<title>Mzansi Basket</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-<link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
->
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
-<link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
->
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
->
-
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
-
+    <!-- Main stylesheet -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
+
 <body>
 
-<header>
 
-```
-<div class="container">
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-    <h1>Mzansi Basket</h1>
+    <header class="site-header">
 
-    <p>
-        Compare your grocery prices, discover potential savings,
-        and understand customer sentiment.
-    </p>
+        <div class="header-inner">
 
-</div>
+            <div class="brand">
 
-
-</header>
-
-<main>
-
-
-<div class="container">
-
-
-    <!-- =========================================
-         RECEIPT UPLOAD
-    ========================================== -->
-
-    <section class="upload-card">
-
-        <p class="eyebrow">
-            RECEIPT ANALYSIS
-        </p>
-
-        <h2>
-            Upload your grocery receipt
-        </h2>
-
-        <p>
-            Upload a receipt and Mzansi Basket will
-            identify your groceries and compare prices.
-        </p>
-
-
-        <form id="receiptForm">
-
-            <input
-                type="file"
-                id="receipt"
-                accept="image/*"
-                required
-            >
-
-            <button
-                type="submit"
-                id="analyseButton"
-            >
-                Analyse Receipt
-            </button>
-
-        </form>
-
-
-        <div
-            id="loading"
-            class="loading hidden"
-        >
-
-            <div class="spinner"></div>
-
-            <p>
-                Analysing your receipt...
-            </p>
-
-        </div>
-
-    </section>
-
-
-    <!-- =========================================
-         PRODUCT SEARCH
-    ========================================== -->
-
-    <section class="upload-card">
-
-        <p class="eyebrow">
-            PRICE COMPARISON
-        </p>
-
-        <h2>
-            Search for a product
-        </h2>
-
-        <p>
-            Don't have a receipt? Enter a product name
-            and compare prices across retailers.
-        </p>
-
-
-        <form id="productSearchForm">
-
-            <input
-                type="text"
-                id="productSearch"
-                placeholder="Example: milk"
-                required
-            >
-
-            <button
-                type="submit"
-                id="compareButton"
-            >
-                Compare Prices
-            </button>
-
-        </form>
-
-
-        <div
-            id="compareLoading"
-            class="loading hidden"
-        >
-
-            <div class="spinner"></div>
-
-            <p>
-                Finding the latest available prices...
-            </p>
-
-        </div>
-
-
-        <div
-            id="productResult"
-            class="hidden"
-        ></div>
-
-    </section>
-
-
-    <!-- =========================================
-         ERROR
-    ========================================== -->
-
-    <div
-        id="error"
-        class="hidden"
-    ></div>
-
-
-    <!-- =========================================
-         RECEIPT DASHBOARD
-    ========================================== -->
-
-    <section
-        id="dashboard"
-        class="hidden"
-    >
-
-        <h2>
-            Grocery Comparison
-        </h2>
-
-
-        <div class="stats">
-
-            <div class="stat-card">
-
-                <span>
-                    Receipt Total
-                </span>
-
-                <strong id="receiptTotal">
-                    R0.00
-                </strong>
-
-            </div>
-
-
-            <div class="stat-card">
-
-                <span>
-                    Possible Saving
-                </span>
-
-                <strong id="possibleSaving">
-                    R0.00
-                </strong>
-
-            </div>
-
-
-            <div class="stat-card">
-
-                <span>
-                    Items
-                </span>
-
-                <strong id="itemCount">
-                    0
-                </strong>
-
-            </div>
-
-
-            <div class="stat-card">
-
-                <span>
-                    Cheapest Store
-                </span>
-
-                <strong id="cheapestStore">
-                    -
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        <!-- Comparison Table -->
-
-        <div class="chart-container">
-
-            <h3>
-                Grocery Price Comparison
-            </h3>
-
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Product
-                            </th>
-
-                            <th>
-                                Receipt Price
-                            </th>
-
-                            <th>
-                                Cheapest
-                            </th>
-
-                            <th>
-                                Saving
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="comparisonTable">
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-
-        <!-- Store Chart -->
-
-        <div class="chart-container">
-
-            <h3>
-                Total Cost by Retailer
-            </h3>
-
-            <canvas id="storeChart"></canvas>
-
-        </div>
-
-
-        <!-- Saving Chart -->
-
-        <div class="chart-container">
-
-            <h3>
-                Potential Savings
-            </h3>
-
-            <canvas id="savingChart"></canvas>
-
-        </div>
-
-    </section>
-
-
-    <!-- =========================================
-         SENTIMENT ANALYSIS
-    ========================================== -->
-
-    <section class="upload-card">
-
-        <p class="eyebrow">
-            CUSTOMER SENTIMENT
-        </p>
-
-        <h2>
-            Understand customer reviews
-        </h2>
-
-        <p>
-            Enter a grocery review and let AI analyse
-            the customer's overall sentiment.
-        </p>
-
-
-        <textarea
-            id="review"
-            placeholder="Example: I really enjoyed this product. It was fresh, affordable and tasted great."
-        ></textarea>
-
-
-        <button
-            id="sentimentButton"
-            type="button"
-        >
-            Analyse Sentiment
-        </button>
-
-
-        <div
-            id="sentimentResult"
-            class="hidden"
-        >
-
-            <div class="sentiment-card">
+                <div class="brand-mark">
+                    🛒
+                </div>
 
                 <div>
 
-                    <div id="sentimentLabel">
-                        Unknown
-                    </div>
+                    <h1>
+                        Mzansi Basket
+                    </h1>
+
+                    <p>
+                        Shop smarter. Save more.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="header-line"></div>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="container">
+
+
+        <!-- INTRO -->
+
+        <section class="intro-section">
+
+            <p class="eyebrow">
+                SMART GROCERY SHOPPING
+            </p>
+
+            <h2>
+                Know what you're paying.
+                <span>Know where to save.</span>
+            </h2>
+
+            <p class="intro-text">
+                Compare grocery prices across South African
+                retailers, analyse your receipt and understand
+                what customers are saying about grocery products.
+            </p>
+
+        </section>
+
+
+
+        <!-- =================================================
+             MANUAL PRODUCT SEARCH
+        ================================================== -->
+
+        <section class="card">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        PRICE COMPARISON
+                    </p>
+
+                    <h3>
+                        Search for a product
+                    </h3>
+
+                    <p>
+                        Enter a grocery product to compare
+                        prices across retailers.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="search-row">
+
+                <input
+                    type="text"
+                    id="productSearch"
+                    placeholder="e.g. bread, milk, eggs"
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    id="searchButton"
+                    class="primary-button"
+                >
+                    Compare Prices
+                </button>
+
+            </div>
+
+
+            <div
+                id="searchError"
+                class="error-message hidden"
+            ></div>
+
+
+            <div
+                id="productResults"
+                class="product-results"
+            ></div>
+
+
+            <p class="source-note">
+                Prices via
+                <a
+                    href="https://loyaltyhub.co.za"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Loyalty Hub
+                </a>
+            </p>
+
+        </section>
+
+
+
+        <!-- =================================================
+             RECEIPT ANALYSIS
+        ================================================== -->
+
+        <section class="card receipt-card">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        RECEIPT ANALYSIS
+                    </p>
+
+                    <h3>
+                        Upload your grocery receipt
+                    </h3>
+
+                    <p>
+                        Let Mzansi Basket read your receipt,
+                        identify your groceries and estimate
+                        where you could save.
+                    </p>
+
+                </div>
+
+                <div class="section-icon">
+                    🧾
+                </div>
+
+            </div>
+
+
+            <form
+                id="receiptForm"
+                enctype="multipart/form-data"
+            >
+
+                <label
+                    for="receipt"
+                    class="upload-box"
+                >
+
+                    <span class="upload-icon">
+                        📄
+                    </span>
+
+                    <strong>
+                        Choose a receipt image
+                    </strong>
+
+                    <span>
+                        JPG, JPEG, PNG or WEBP
+                    </span>
+
+                    <input
+                        type="file"
+                        id="receipt"
+                        name="receipt"
+                        accept="image/*"
+                    >
+
+                </label>
+
+
+                <div
+                    id="selectedReceipt"
+                    class="selected-file hidden"
+                ></div>
+
+
+                <button
+                    type="submit"
+                    id="analyseButton"
+                    class="primary-button full-button"
+                >
+                    Analyse Receipt
+                </button>
+
+            </form>
+
+
+            <div
+                id="receiptError"
+                class="error-message hidden"
+            ></div>
+
+
+            <!-- RECEIPT DASHBOARD -->
+
+            <div
+                id="dashboard"
+                class="dashboard hidden"
+            >
+
+                <div class="dashboard-header">
 
                     <div>
 
-                        Sentiment Score:
-                        <span id="sentimentScore">
-                            0.00
-                        </span>
+                        <p class="section-label">
+                            YOUR BASKET
+                        </p>
+
+                        <h3>
+                            Receipt comparison
+                        </h3>
 
                     </div>
 
                 </div>
 
 
-                <p id="sentimentSummary">
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <span>
+                            Items
+                        </span>
+
+                        <strong id="totalItems">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <span>
+                            Current total
+                        </span>
+
+                        <strong id="currentTotal">
+                            R0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="stat-card savings-stat">
+
+                        <span>
+                            Potential savings
+                        </span>
+
+                        <strong id="potentialSavings">
+                            R0.00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="comparison-table-wrapper">
+
+                    <h4>
+                        Retailer comparison
+                    </h4>
+
+                    <div id="comparisonTable"></div>
+
+                </div>
+
+
+                <div class="charts-grid">
+
+                    <div class="chart-card">
+
+                        <h4>
+                            Basket price by retailer
+                        </h4>
+
+                        <div class="chart-container">
+
+                            <canvas
+                                id="storeChart"
+                            ></canvas>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="chart-card">
+
+                        <h4>
+                            Potential savings
+                        </h4>
+
+                        <div class="chart-container">
+
+                            <canvas
+                                id="savingChart"
+                            ></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <p class="source-note dashboard-source">
+                    Prices via
+                    <a
+                        href="https://loyaltyhub.co.za"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Loyalty Hub
+                    </a>
                 </p>
 
+            </div>
 
-                <!-- Quality Score -->
+        </section>
+
+
+
+        <!-- =================================================
+             SENTIMENT ANALYSIS
+        ================================================== -->
+
+        <section class="card sentiment-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        AI SENTIMENT ANALYSIS
+                    </p>
+
+                    <h3>
+                        What do shoppers think?
+                    </h3>
+
+                    <p>
+                        Write a grocery review and let AI
+                        analyse the feeling behind it.
+                    </p>
+
+                </div>
+
+                <div class="section-icon">
+                    💬
+                </div>
+
+            </div>
+
+
+            <!-- STAR RATING -->
+
+            <div class="user-rating">
+
+                <label>
+                    Your rating
+                </label>
+
+                <div
+                    id="reviewStars"
+                    class="rating-stars"
+                    aria-label="Choose a rating from one to five stars"
+                >
+
+                    <button
+                        type="button"
+                        class="rating-star"
+                        data-rating="1"
+                        aria-label="1 star"
+                    >
+                        ☆
+                    </button>
+
+                    <button
+                        type="button"
+                        class="rating-star"
+                        data-rating="2"
+                        aria-label="2 stars"
+                    >
+                        ☆
+                    </button>
+
+                    <button
+                        type="button"
+                        class="rating-star"
+                        data-rating="3"
+                        aria-label="3 stars"
+                    >
+                        ☆
+                    </button>
+
+                    <button
+                        type="button"
+                        class="rating-star"
+                        data-rating="4"
+                        aria-label="4 stars"
+                    >
+                        ☆
+                    </button>
+
+                    <button
+                        type="button"
+                        class="rating-star"
+                        data-rating="5"
+                        aria-label="5 stars"
+                    >
+                        ☆
+                    </button>
+
+                </div>
+
+                <input
+                    type="hidden"
+                    id="selectedRating"
+                    value="0"
+                >
+
+                <p
+                    id="ratingHelper"
+                    class="rating-helper"
+                >
+                    Select a rating before analysing your review.
+                </p>
+
+            </div>
+
+
+
+            <!-- REVIEW -->
+
+            <label
+                for="review"
+                class="input-label"
+            >
+                Your grocery review
+            </label>
+
+            <textarea
+                id="review"
+                rows="5"
+                placeholder="Example: The bread was fresh and affordable, but the packaging was damaged."
+            ></textarea>
+
+
+            <button
+                type="button"
+                id="sentimentButton"
+                class="primary-button"
+            >
+                Analyse Sentiment
+            </button>
+
+
+            <div
+                id="sentimentError"
+                class="error-message hidden"
+            ></div>
+
+
+
+            <!-- SENTIMENT RESULT -->
+
+            <div
+                id="sentimentResult"
+                class="sentiment-result hidden"
+            >
+
+                <div class="sentiment-result-top">
+
+
+                    <div class="sentiment-score-box">
+
+                        <span class="result-label">
+                            AI sentiment
+                        </span>
+
+                        <strong id="sentimentLabel">
+                            😐 Neutral
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sentiment-score-box">
+
+                        <span class="result-label">
+                            Sentiment score
+                        </span>
+
+                        <strong id="sentimentScore">
+                            0.00
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- USER RATING RESULT -->
+
+                <div
+                    id="ratingResult"
+                    class="rating-result hidden"
+                ></div>
+
+
+                <!-- SUMMARY -->
+
+                <div class="summary-box">
+
+                    <span class="result-label">
+                        AI summary
+                    </span>
+
+                    <p id="sentimentSummary">
+                        No summary available.
+                    </p>
+
+                </div>
+
+
+                <!-- QUALITY -->
 
                 <div class="quality-indicator">
 
                     <h4>
-                        Customer Quality Score
+                        Customer perception score
                     </h4>
-
 
                     <div class="quality-score-row">
 
-                        <div id="qualityNumber">
-                            0
-                        </div>
+                        <strong id="qualityNumber">
+                            50
+                        </strong>
 
                         <span>
                             / 100
                         </span>
 
                     </div>
-
 
                     <div class="quality-bar">
 
@@ -431,7 +636,7 @@
                 </div>
 
 
-                <!-- Sentiment Meter -->
+                <!-- SENTIMENT METER -->
 
                 <div class="sentiment-meter">
 
@@ -465,24 +670,584 @@
 
             </div>
 
-        </div>
-
-    </section>
+        </section>
 
 
-</div>
-```
 
-</main>
+        <!-- =================================================
+             GROCERY INSIGHTS
+        ================================================== -->
 
-<script
-    src="https://cdn.jsdelivr.net/npm/chart.js"
-></script>
+        <section class="card grocery-insights">
 
-<script
-    src="{{ url_for('static', filename='app.js') }}"
-></script>
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        GROCERY INSIGHTS
+                    </p>
+
+                    <h3>
+                        Quick grocery intelligence
+                    </h3>
+
+                    <p>
+                        A simple project view of common grocery
+                        categories and retailer perceptions.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- BREAD -->
+
+            <div class="insight-category">
+
+                <div class="insight-category-header">
+
+                    <div class="insight-icon">
+                        🍞
+                    </div>
+
+                    <div>
+
+                        <h4>
+                            Bread
+                        </h4>
+
+                        <p class="insight-highlight">
+                            Compare brand and size before choosing
+                            the cheapest option.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="insight-grid">
+
+                    <div
+                        class="insight-card"
+                        data-rating="5"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Woolworths
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Quality perception
+                        </span>
+
+                        <p class="insight-note">
+                            Premium positioning.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Checkers
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Value perception
+                        </span>
+
+                        <p class="insight-note">
+                            Strong everyday value.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Pick n Pay
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Everyday shopping
+                        </span>
+
+                        <p class="insight-note">
+                            Familiar household choice.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="3"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Shoprite
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Affordability perception
+                        </span>
+
+                        <p class="insight-note">
+                            Strong value-focused positioning.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- MILK -->
+
+            <div class="insight-category">
+
+                <div class="insight-category-header">
+
+                    <div class="insight-icon">
+                        🥛
+                    </div>
+
+                    <div>
+
+                        <h4>
+                            Milk
+                        </h4>
+
+                        <p class="insight-highlight">
+                            Check both pack size and unit price.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="insight-grid">
+
+                    <div
+                        class="insight-card"
+                        data-rating="5"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Woolworths
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Quality perception
+                        </span>
+
+                        <p class="insight-note">
+                            Premium quality perception.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Checkers
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Value perception
+                        </span>
+
+                        <p class="insight-note">
+                            Practical everyday option.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Pick n Pay
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Everyday shopping
+                        </span>
+
+                        <p class="insight-note">
+                            Convenient mainstream option.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="3"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Shoprite
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Affordability perception
+                        </span>
+
+                        <p class="insight-note">
+                            Value-focused positioning.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- EGGS -->
+
+            <div class="insight-category">
+
+                <div class="insight-category-header">
+
+                    <div class="insight-icon">
+                        🥚
+                    </div>
+
+                    <div>
+
+                        <h4>
+                            Eggs
+                        </h4>
+
+                        <p class="insight-highlight">
+                            Compare pack quantity and price per egg.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="insight-grid">
+
+                    <div
+                        class="insight-card"
+                        data-rating="5"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Woolworths
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Quality perception
+                        </span>
+
+                        <p class="insight-note">
+                            Premium perception.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Checkers
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Value perception
+                        </span>
+
+                        <p class="insight-note">
+                            Strong everyday option.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="4"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Pick n Pay
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Everyday shopping
+                        </span>
+
+                        <p class="insight-note">
+                            Familiar grocery choice.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card"
+                        data-rating="3"
+                    >
+
+                        <div class="insight-card-top">
+
+                            <strong>
+                                Shoprite
+                            </strong>
+
+                            <div class="insight-stars">
+
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+                                <span class="insight-star">★</span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="insight-label">
+                            Affordability perception
+                        </span>
+
+                        <p class="insight-note">
+                            Value-focused positioning.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <p class="insight-disclaimer">
+                These are curated project insights based on general
+                retailer and product positioning. They are not live
+                customer review ratings and should not be interpreted
+                as official retailer scores.
+            </p>
+
+        </section>
+
+
+
+        <!-- FOOTER -->
+
+        <footer class="site-footer">
+
+            <strong>
+                Mzansi Basket
+            </strong>
+
+            <span>
+                Smart grocery shopping for South Africa.
+            </span>
+
+        </footer>
+
+
+    </main>
+
+
+    <!-- Chart.js -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js"
+    ></script>
+
+
+    <!-- Application JavaScript -->
+    <script
+        src="{{ url_for('static', filename='app.js') }}"
+    ></script>
+
 
 </body>
 
 </html>
+```
