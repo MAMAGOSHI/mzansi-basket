@@ -1,6 +1,9 @@
+
 Flask
 python-dotenv
 requests
 google-genai
 Pillow
 gunicorn
+Flask-SQLAlchemy
+psycopg[binary]

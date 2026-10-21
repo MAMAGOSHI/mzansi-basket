@@ -1870,11 +1870,12 @@ document.addEventListener(
 
                             },
 
-                            body:
-                                JSON.stringify({
-                                    review: text
-                                })
-
+                            body: JSON.stringify({
+    review: text,
+    rating: Number(
+        selectedRating ? selectedRating.value : 0
+    )
+})
                         }
                     );
 
@@ -1902,10 +1903,36 @@ document.addEventListener(
                 }
 
 
-                displaySentiment(
-                    data
-                );
+                displaySentiment(data);
 
+
+if (data.saved === true) {
+    console.log(
+        "Review saved successfully. Review ID:",
+        data.review_id
+    );
+
+    await loadPublicReviews();
+
+    const publicReviews = document.getElementById("publicReviews");
+
+    if (publicReviews) {
+        publicReviews.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+} else {
+    console.warn(
+        "Sentiment analysed, but review saving was not confirmed:",
+        data
+    );
+
+    showError(
+        "sentimentError",
+        "The review was analysed, but the server did not confirm that it was saved."
+    );
+}
 
             } catch (error) {
 
@@ -1997,10 +2024,18 @@ document.addEventListener(
             // -------------------------------------------------
 
             let rawScore =
-                data.score ??
-                data.sentiment_score ??
-                data.sentimentScore ??
-                0;
+    data.score ??
+    data.sentiment_score ??
+    data.sentimentScore ??
+    data.sentiment?.score ??
+    data.analysis?.score;
+
+if (rawScore === undefined || rawScore === null) {
+    console.error(
+        "The sentiment response did not contain a score:",
+        data
+    );
+}
 
 
             if (
@@ -2381,6 +2416,116 @@ document.addEventListener(
 
             }
         );
+        
+
+        // =====================================================
+        // PUBLIC CUSTOMER REVIEWS
+        // Load saved reviews for every visitor
+        // =====================================================
+
+        async function loadPublicReviews() {
+            const message = document.getElementById("reviewsMessage");
+            const list = document.getElementById("reviewsList");
+
+            if (!message || !list) return;
+
+            message.textContent = "Loading customer reviews...";
+            list.replaceChildren();
+
+            try {
+                const response = await fetch("/reviews", {
+                    method: "GET",
+                    headers: { "Accept": "application/json" },
+                    cache: "no-store"
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Could not load reviews.");
+                }
+
+                const reviews = Array.isArray(data.reviews)
+                    ? data.reviews
+                    : [];
+
+                if (reviews.length === 0) {
+                    message.textContent =
+                        "No reviews yet. Be the first shopper to share your experience!";
+                    return;
+                }
+
+                message.textContent =
+                    `${reviews.length} customer review${reviews.length === 1 ? "" : "s"}`;
+
+                reviews.forEach(function (review) {
+                    const card = document.createElement("article");
+                    card.className = "review-card";
+
+                    const top = document.createElement("div");
+                    top.className = "review-card-top";
+
+                    const sentiment = String(review.sentiment || "Unclassified");
+                    const sentimentLabel = document.createElement("span");
+                    sentimentLabel.className = "review-sentiment";
+                    sentimentLabel.textContent = sentiment;
+                    top.appendChild(sentimentLabel);
+
+                    if (review.rating !== null && review.rating !== undefined) {
+                        const rating = Number(review.rating);
+
+                        if (rating >= 1 && rating <= 5) {
+                            const stars = document.createElement("span");
+                            stars.className = "review-rating";
+                            stars.textContent =
+                                "★".repeat(rating) + "☆".repeat(5 - rating);
+                            stars.setAttribute("aria-label", `${rating} out of 5 stars`);
+                            top.appendChild(stars);
+                        }
+                    }
+
+                    card.appendChild(top);
+
+                    const reviewText = document.createElement("p");
+                    reviewText.className = "review-card-text";
+                    reviewText.textContent = review.review || "";
+                    card.appendChild(reviewText);
+
+                    if (review.summary) {
+                        const summary = document.createElement("p");
+                        summary.className = "review-card-summary";
+                        summary.textContent = `AI summary: ${review.summary}`;
+                        card.appendChild(summary);
+                    }
+
+                    if (review.created_at) {
+                        const date = new Date(review.created_at);
+
+                        if (!Number.isNaN(date.getTime())) {
+                            const dateText = document.createElement("time");
+                            dateText.className = "review-date";
+                            dateText.dateTime = date.toISOString();
+                            dateText.textContent = date.toLocaleDateString("en-ZA", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                            });
+                            card.appendChild(dateText);
+                        }
+                    }
+
+                    list.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Loading customer reviews failed:", error);
+                message.textContent =
+                    "We couldn't load customer reviews. Please refresh the page and try again.";
+            }
+        }
+
+        // Load existing reviews when the page opens.
+        loadPublicReviews();
 
 
         console.log(
